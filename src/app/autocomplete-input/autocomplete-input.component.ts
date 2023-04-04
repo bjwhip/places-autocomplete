@@ -1,15 +1,16 @@
-import { Component, OnInit, ViewChild, ElementRef, EventEmitter, Output } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, EventEmitter, Output, AfterViewInit } from '@angular/core';
+import { Loader } from '@googlemaps/js-api-loader';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-declare let google: any;
+declare var google: any;
 
 @Component({
   selector: 'app-autocomplete-input',
   templateUrl: './autocomplete-input.component.html',
   styleUrls: ['./autocomplete-input.component.scss'],
 })
-export class AutocompleteInputComponent implements OnInit {
+export class AutocompleteInputComponent implements OnInit, AfterViewInit{
   @Output() placeChanged: EventEmitter<any> = new EventEmitter();
   
   @ViewChild('searchInput') searchInput!: ElementRef;
@@ -29,19 +30,24 @@ export class AutocompleteInputComponent implements OnInit {
       .subscribe((searchText) => this.searchAddress(searchText));
   }
 
-  private loadGoogleMapsApi(): Promise<boolean> {
-    return new Promise((resolve) => {
-      if (typeof google !== 'undefined' && google.maps && google.maps.places) {
-        resolve(true);
-      } else {
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyA9PZH2zWK8cpwK0tQYPWzQCOjt8VxbqoI&libraries=places`;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve(true);
-        document.body.appendChild(script);
-      }
-    });
+  ngAfterViewInit(): void {
+    
+  }
+
+  private async loadGoogleMapsApi(): Promise<boolean> {
+    try {
+      const loader = new Loader({
+        apiKey: 'AIzaSyA9PZH2zWK8cpwK0tQYPWzQCOjt8VxbqoI',
+        version: 'weekly',
+        libraries: ['places'],
+      });
+
+      await loader.load();
+      return true;
+    } catch (error) {
+      console.error('Error loading Google Maps API:', error);
+      return false;
+    }
   }
 
   private initializeAutocomplete(): void {
